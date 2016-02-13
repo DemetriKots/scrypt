@@ -1,3 +1,10 @@
+Notes on this Fork
+
+  This version has been modified to support the idiosyncratic format used by
+  the Ruby implementation of scrypt that can be found here – 
+  https://github.com/pbhogan/scrypt. It is still compatible with the original
+  version of the library.
+
 Java implementation of scrypt
 
   A pure Java implementation of the scrypt key derivation function and a JNI
