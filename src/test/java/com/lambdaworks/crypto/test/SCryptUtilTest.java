@@ -32,12 +32,32 @@ public class SCryptUtilTest {
         assertEquals(p, params >> 0 & 0xff);
     }
 
+    public void scryptRuby() {
+        int N = 16384;
+        int r = 8;
+        int p = 1;
+
+        String hashed = SCryptUtil.scryptRuby(passwd, N, r, p);
+        String[] parts = hashed.split("\\$");
+
+        assertEquals(5, parts.length);
+        Assert.assertEquals(16, Base64.decode(parts[3].toCharArray()).length);
+        assertEquals(32, Base64.decode(parts[4].toCharArray()).length);
+        assertEquals(Integer.toString(N), parts[0]);
+        assertEquals(Integer.toString(r), parts[1]);
+        assertEquals(Integer.toString(p), parts[2]);
+    }
+
     @Test
     public void check() {
         String hashed = SCryptUtil.scrypt(passwd, 16384, 8, 1);
 
         assertTrue(SCryptUtil.check(passwd, hashed));
         assertFalse(SCryptUtil.check("s3cr3t", hashed));
+
+        String hashed2 = SCryptUtil.scryptRuby(passwd, 16384, 8, 1);
+        assertTrue(SCryptUtil.check(passwd, hashed2));
+        assertFalse(SCryptUtil.check("s3cr3t",hashed2));
     }
 
     @Test
