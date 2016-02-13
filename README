@@ -5,6 +5,10 @@ Notes on this Fork
   https://github.com/pbhogan/scrypt. It is still compatible with the original
   version of the library.
 
+  Key additions include the ability to pass parameters as separate strings
+  rather than using the MCF parameter format and the ability to read hex encoded 
+  salt and password hashes rather than the more standard Base64.
+
 Java implementation of scrypt
 
   A pure Java implementation of the scrypt key derivation function and a JNI
