@@ -46,6 +46,7 @@ public class SCryptUtilTest {
         assertEquals(Integer.toString(N), parts[0]);
         assertEquals(Integer.toString(r), parts[1]);
         assertEquals(Integer.toString(p), parts[2]);
+
     }
 
     @Test
@@ -58,6 +59,10 @@ public class SCryptUtilTest {
         String hashed2 = SCryptUtil.scryptRuby(passwd, 16384, 8, 1);
         assertTrue(SCryptUtil.check(passwd, hashed2));
         assertFalse(SCryptUtil.check("s3cr3t",hashed2));
+
+        // Test with an example from the Ruby scrypt project
+        String preHashed = "400$8$36$78f4ae6983f76119$37ec6ce55a2b928dc56ff9a7d0cdafbd7dbde49d9282c38a40b1434e88f24cf5";
+        assertTrue(SCryptUtil.check("my grand secret",preHashed));
     }
 
     @Test

@@ -5,7 +5,7 @@ package com.lambdaworks.crypto;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.IllegalFormatCodePointException;
+import org.apache.commons.codec.binary.Hex;
 
 import static com.lambdaworks.codec.Base64.*;
 
@@ -61,6 +61,16 @@ public class SCryptUtil {
          return scrypt(passwd, N, r, p, true);
      }
 
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+
     private static String scrypt(String passwd, int N, int r, int p, boolean isRubyFormat) {
         try {
             byte[] salt = new byte[16];
@@ -68,17 +78,19 @@ public class SCryptUtil {
 
             byte[] derived = SCrypt.scrypt(passwd.getBytes("UTF-8"), salt, N, r, p, 32);
 
-
             StringBuilder sb = new StringBuilder((salt.length + derived.length) * 2);
 
             if (isRubyFormat) {
-                sb.append(N).append("$").append(r).append("$").append(p).append("$");
+                sb.append(Integer.toHexString(N)).append("$").append(Integer.toHexString(r));
+                sb.append("$").append(Integer.toHexString(p)).append("$");
+                sb.append(Hex.encodeHex(salt)).append("$");
+                sb.append(Hex.encodeHex(derived));
             } else {
                 String params = Long.toString(log2(N) << 16L | r << 8 | p, 16);
                 sb.append("$s0$").append(params).append('$');
-            }
-            sb.append(encode(salt)).append('$');
-            sb.append(encode(derived));
+                sb.append(encode(salt)).append('$');
+                sb.append(encode(derived));
+           }
 
             return sb.toString();
         } catch (UnsupportedEncodingException e) {
@@ -108,25 +120,37 @@ public class SCryptUtil {
             int r;
             int p;
 
+            byte[] salt;
+            byte[] derived0;
+
             if (parts[1].equals("s0")) {
-              long params = Long.parseLong(parts[2], 16);
+                long params = Long.parseLong(parts[2], 16);
 
-              N = (int) Math.pow(2, params >> 16 & 0xffff);
-              r = (int) params >> 8 & 0xff;
-              p = (int) params      & 0xff;
+                N = (int) Math.pow(2, params >> 16 & 0xffff);
+                r = (int) params >> 8 & 0xff;
+                p = (int) params      & 0xff;
 
+                salt = decode(parts[3].toCharArray());
+                derived0 = decode(parts[4].toCharArray());
             } else {   //Try alternate hash format
                 try {
-                    N = Integer.parseInt(parts[0]);
-                    r = Integer.parseInt(parts[1]);
-                    p = Integer.parseInt(parts[2]);
+                    N = Integer.parseInt(parts[0],16);
+                    r = Integer.parseInt(parts[1],16);
+                    p = Integer.parseInt(parts[2],16);
+                    char[] saltChars = parts[3].toCharArray();
+                    char[] derivedChars = parts[4].toCharArray();
+
+                    try {
+                        salt = Hex.decodeHex(saltChars);
+                        derived0 = Hex.decodeHex(derivedChars);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Invalid hashed value");
+                    }
+
                 } catch (NumberFormatException e){
                     throw new IllegalArgumentException("Invalid hashed value");
                 }
             }
-
-            byte[] salt = decode(parts[3].toCharArray());
-            byte[] derived0 = decode(parts[4].toCharArray());
 
             byte[] derived1 = SCrypt.scrypt(passwd.getBytes("UTF-8"), salt, N, r, p, derived0.length);
 
