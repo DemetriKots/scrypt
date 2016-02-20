@@ -43,7 +43,7 @@ public class SCryptUtil {
      * @return The hashed password.
      */
     public static String scrypt(String passwd, int N, int r, int p) {
-        return scrypt(passwd, N, r, p, false);
+        return scrypt(passwd, N, r, p, false, 16, 32);
     }
 
      /**
@@ -58,25 +58,15 @@ public class SCryptUtil {
      * @return The hashed password.
      */
      public static String scryptRuby(String passwd, int N, int r, int p) {
-         return scrypt(passwd, N, r, p, true);
+         return scrypt(passwd, N, r, p, true, 8, 32);
      }
 
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
-    }
-
-    private static String scrypt(String passwd, int N, int r, int p, boolean isRubyFormat) {
+    private static String scrypt(String passwd, int N, int r, int p, boolean isRubyFormat, int saltLength, int derivedLength) {
         try {
-            byte[] salt = new byte[16];
+            byte[] salt = new byte[saltLength];
             SecureRandom.getInstance("SHA1PRNG").nextBytes(salt);
 
-            byte[] derived = SCrypt.scrypt(passwd.getBytes("UTF-8"), salt, N, r, p, 32);
+            byte[] derived = SCrypt.scrypt(passwd.getBytes("UTF-8"), salt, N, r, p, derivedLength);
 
             StringBuilder sb = new StringBuilder((salt.length + derived.length) * 2);
 
@@ -85,6 +75,7 @@ public class SCryptUtil {
                 sb.append("$").append(Integer.toHexString(p)).append("$");
                 sb.append(Hex.encodeHex(salt)).append("$");
                 sb.append(Hex.encodeHex(derived));
+           //     System.out.println(sb.toString());
             } else {
                 String params = Long.toString(log2(N) << 16L | r << 8 | p, 16);
                 sb.append("$s0$").append(params).append('$');

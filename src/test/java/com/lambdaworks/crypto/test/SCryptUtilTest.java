@@ -4,6 +4,8 @@ package com.lambdaworks.crypto.test;
 
 import com.lambdaworks.codec.Base64;
 import com.lambdaworks.crypto.SCryptUtil;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -32,8 +34,9 @@ public class SCryptUtilTest {
         assertEquals(p, params >> 0 & 0xff);
     }
 
+    @Test
     public void scryptRuby() {
-        int N = 16384;
+        int N = 1024;
         int r = 8;
         int p = 1;
 
@@ -41,11 +44,15 @@ public class SCryptUtilTest {
         String[] parts = hashed.split("\\$");
 
         assertEquals(5, parts.length);
-        Assert.assertEquals(16, Base64.decode(parts[3].toCharArray()).length);
-        assertEquals(32, Base64.decode(parts[4].toCharArray()).length);
-        assertEquals(Integer.toString(N), parts[0]);
-        assertEquals(Integer.toString(r), parts[1]);
-        assertEquals(Integer.toString(p), parts[2]);
+        try {
+            assertEquals(8, Hex.decodeHex(parts[3].toCharArray()).length);
+            assertEquals(32, Hex.decodeHex(parts[4].toCharArray()).length);
+        } catch (DecoderException e) {
+            fail("There was an exception decoding the hashed value: \n" + e.getMessage());
+        }
+        assertEquals(N, Integer.parseInt(parts[0],16));
+        assertEquals(r, Integer.parseInt(parts[1],16));
+        assertEquals(p, Integer.parseInt(parts[2],16));
 
     }
 
